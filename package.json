@@ -1,0 +1,22 @@
+{
+  "name": "dao-voting-system",
+  "version": "1.0.0",
+  "description": "Sistema de votação DAO com smart contracts",
+  "main": "index.js",
+  "scripts": {
+    "setup": "npm run setup:contracts && npm run setup:frontend",
+    "setup:contracts": "cd contracts && forge install",
+    "setup:frontend": "cd frontend && npm install",
+    "test": "cd contracts && forge test",
+    "test:coverage": "cd contracts && forge coverage",
+    "deploy:sepolia": "cd contracts && forge script script/Deploy.s.sol --rpc-url sepolia --broadcast --verify",
+    "start:frontend": "cd frontend && npm start",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": ["dao", "blockchain", "voting", "ethereum", "solidity"],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "devDependencies": {
+    "dotenv": "^16.0.3"
+  }
+} 
