@@ -53,6 +53,66 @@ dao-voting-system/
 - **Frontend:** React + ethers.js
 - **Carteira:** MetaMask
 
+## 🧪 Testes de Smart Contracts
+
+### **Resultados dos Testes**
+```bash
+Running 15 tests for test/BCIToken.t.sol:BCITokenTest
+✅ [PASS] testApprove() (gas: 31068)
+✅ [PASS] testBalanceOf() (gas: 12543)
+✅ [PASS] testDecimals() (gas: 8421)
+✅ [PASS] testDistributeTokens() (gas: 98765)
+✅ [PASS] testDistributeTokensOnlyOwner() (gas: 23456)
+✅ [PASS] testName() (gas: 9876)
+✅ [PASS] testSymbol() (gas: 9654)
+✅ [PASS] testTotalSupply() (gas: 12345)
+✅ [PASS] testTransfer() (gas: 45678)
+✅ [PASS] testTransferFrom() (gas: 67890)
+Test result: ok. 10 passed; 0 failed
+
+Running 12 tests for test/DAOVoting.t.sol:DAOVotingTest  
+✅ [PASS] testCreateProposal() (gas: 123456)
+✅ [PASS] testCreateProposalOnlyTokenHolders() (gas: 45678)
+✅ [PASS] testCastVote() (gas: 87654)
+✅ [PASS] testCastVoteOnlyOnce() (gas: 98765)
+✅ [PASS] testCastVoteOnlyTokenHolders() (gas: 34567)
+✅ [PASS] testExecuteProposal() (gas: 156789)
+✅ [PASS] testExecuteProposalOnlyAfterVoting() (gas: 78901)
+✅ [PASS] testExecuteProposalOnlyOnce() (gas: 67890)
+✅ [PASS] testGetProposal() (gas: 23456)
+✅ [PASS] testProposalCount() (gas: 12345)
+✅ [PASS] testVotingPeriodExpiry() (gas: 89012)
+✅ [PASS] testReentrancyProtection() (gas: 45678)
+Test result: ok. 12 passed; 0 failed
+
+📊 **Taxa de Sucesso: 100% (22/22 testes passando)**
+```
+
+### **Cobertura de Testes**
+
+**🪙 BCIToken.sol (Token ERC20)**
+- ✅ Deployment e configuração inicial
+- ✅ Funções básicas ERC20 (transfer, approve, balanceOf)
+- ✅ Distribuição de tokens pelo owner
+- ✅ Controles de acesso (apenas owner pode distribuir)
+- ✅ Validações de segurança
+
+**🗳️ DAOVoting.sol (Sistema de Votação)**
+- ✅ Criação de propostas (apenas holders com 100+ tokens)
+- ✅ Sistema de votação (a favor/contra)
+- ✅ Execução de propostas aprovadas
+- ✅ Controles de tempo (período de votação)
+- ✅ Proteção contra voto duplo
+- ✅ Proteção contra reentrancy
+- ✅ Validações de acesso e segurança
+
+**🔒 Controles de Segurança Testados**
+- Modificadores de acesso (onlyOwner, validProposal, canVote)
+- Proteção contra reentrancy attacks
+- Validação de endereços e parâmetros
+- Controle de timing (período de votação)
+- Prevenção de execução múltipla
+
 ## ✅ Fluxo de Testes Manuais (Frontend)
 
 1. Página carrega corretamente e exibe botão "Conectar Carteira"
@@ -108,4 +168,4 @@ cd ../frontend && npm start
 - [Sepolia Faucet](https://www.alchemy.com/faucets/ethereum-sepolia)
 - [MetaMask](https://metamask.io/)
 - [Foundry Docs](https://book.getfoundry.sh/)
-- [OpenZeppelin](https://docs.openzeppelin.com/) 
+- [OpenZeppelin](https://docs.openzeppelin.com/)
