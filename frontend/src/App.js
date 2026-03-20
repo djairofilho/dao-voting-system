@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import WalletConnection from './components/WalletConnection';
 import ProposalList from './components/ProposalList';
 import CreateProposal from './components/CreateProposal';
+import SepoliaFaucet from './components/SepoliaFaucet';
 import { BCI_TOKEN_ADDRESS, DAO_VOTING_ADDRESS } from './utils/contracts';
 import './styles/urna.css'; // Importar estilos da urna
 
@@ -68,6 +69,8 @@ function App() {
       </div>
 
       <WalletConnection onWalletConnect={handleWalletConnect} />
+
+      <SepoliaFaucet account={connectedAccount} />
 
       {connectedAccount && (
         <>
