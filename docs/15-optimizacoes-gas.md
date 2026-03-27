@@ -43,40 +43,40 @@ Regra: Evitar SSTORE ao máximo!
 
 ## ✂️ Técnica 1: Packing Variables
 
-### ❌ Ruim: 3 slots de storage
+### ❌ Ruim: ordem que desperdiça slots
 
 ```solidity
 contract BadPacking {
-    uint256 a;      // 32 bytes (1 slot)
-    uint128 b;      // 16 bytes (nova slot? NÃO!)
-    uint128 c;      // 16 bytes (1 slot)
-    uint256 d;      // 32 bytes (1 slot)
+    uint128 b;      // 16 bytes (slot 0: metade usada)
+    uint256 a;      // 32 bytes (slot 1)
+    uint128 c;      // 16 bytes (slot 2: metade usada)
+    uint256 d;      // 32 bytes (slot 3)
     
     // Total: 4 slots = 4 * 20000 gas por write
 }
 ```
 
-### ✅ Bom: Pack pequenos tipos
+### ✅ Bom: agrupar tipos pequenos
 
 ```solidity
 contract GoodPacking {
-    uint256 a;          // 32 bytes (slot 0)
     uint128 b;          // 16 bytes \
-    uint128 c;          // 16 bytes / (compartilham slot 1)
+    uint128 c;          // 16 bytes / (slot 0 completo)
+    uint256 a;          // 32 bytes (slot 1)
     uint256 d;          // 32 bytes (slot 2)
     
     // Total: 3 slots = 3 * 20000 gas
     // Economiza ~20k gas!
 }
 
-// Ou melhor ainda:
+// Mesma ideia, também eficiente:
 contract BetterPacking {
-    uint256 a;          // 32 bytes (slot 0)
-    uint256 d;          // 32 bytes (slot 1)
     uint128 b;          // 16 bytes \
-    uint128 c;          // 16 bytes / (slot 2)
+    uint128 c;          // 16 bytes / (slot 0)
+    uint256 a;          // 32 bytes (slot 1)
+    uint256 d;          // 32 bytes (slot 2)
     
-    // Acesso sequencial = + rápido em cache
+    // Total: 3 slots
 }
 ```
 
