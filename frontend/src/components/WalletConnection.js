@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { connectWallet, formatAddress, formatTokens, getBCITokenContract } from '../utils/contracts';
 
 const WalletConnection = ({ onWalletConnect }) => {
@@ -8,18 +8,7 @@ const WalletConnection = ({ onWalletConnect }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    checkConnection();
-    setupEventListeners();
-  }, []);
-
-  useEffect(() => {
-    if (account) {
-      loadBalances();
-    }
-  }, [account]);
-
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     if (window.ethereum) {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -31,11 +20,11 @@ const WalletConnection = ({ onWalletConnect }) => {
         console.error('Erro ao verificar conexão:', error);
       }
     }
-  };
+  }, [onWalletConnect]);
 
-  const setupEventListeners = () => {
+  const setupEventListeners = useCallback(() => {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
+      const handleAccountsChanged = (accounts) => {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           onWalletConnect?.(accounts[0]);
@@ -45,15 +34,24 @@ const WalletConnection = ({ onWalletConnect }) => {
           setTokenBalance('0');
           onWalletConnect?.(null);
         }
-      });
+      };
 
-      window.ethereum.on('chainChanged', () => {
+      const handleChainChanged = () => {
         window.location.reload();
-      });
-    }
-  };
+      };
 
-  const loadBalances = async () => {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      return () => {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      };
+    }
+    return undefined;
+  }, [onWalletConnect]);
+
+  const loadBalances = useCallback(async () => {
     try {
       if (!account) return;
 
@@ -75,7 +73,17 @@ const WalletConnection = ({ onWalletConnect }) => {
     } catch (error) {
       console.error('Erro ao carregar saldos:', error);
     }
-  };
+  }, [account]);
+
+  useEffect(() => {
+    checkConnection();
+    const cleanup = setupEventListeners();
+    return cleanup;
+  }, [checkConnection, setupEventListeners]);
+
+  useEffect(() => {
+    loadBalances();
+  }, [loadBalances]);
 
   const handleConnect = async () => {
     setIsConnecting(true);

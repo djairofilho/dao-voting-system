@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import WalletConnection from './components/WalletConnection';
 import ProposalList from './components/ProposalList';
 import CreateProposal from './components/CreateProposal';
