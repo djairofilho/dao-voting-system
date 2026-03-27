@@ -41,6 +41,7 @@ Se você é **novo no projeto**, comece pelo guia rápido: [Guia Rápido](./01-g
 - **[18 - Glossário Web3](./18-glossario.md)** - Termos importantes
 - **[19 - Links Úteis](./19-links-uteis.md)** - Ferramentas e recursos
 - **[20 - Roadmap Futuro](./20-roadmap.md)** - Melhorias planejadas
+- **[21 - Como Estruturar Contratos](./21-como-estruturar-contratos.md)** - Separar funções de forma simples e organizada
 
 ---
 
