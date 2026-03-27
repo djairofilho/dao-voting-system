@@ -8,10 +8,10 @@
 
 ```
 BCIToken = Token ERC20 padrão
-├─ Total supply: 1.000.000 BCI
+├─ Total supply inicial: 10.000 BCI
 ├─ Decimais: 18
 ├─ Transferível: Sim
-└─ Queimável: Não (por enquanto)
+└─ Queimável: Sim (apenas owner)
 ```
 
 ---
@@ -247,16 +247,16 @@ console.log('Bob pode gastar:', ethers.utils.formatUnits(allowed, 18), 'BCI');
 **Exemplo**:
 ```solidity
 uint256 total = bciToken.totalSupply();
-// Retorno: 1000000000000000000000000 (1.000.000 BCI com 18 decimais)
+// Retorno inicial: 10000000000000000000000 (10.000 BCI com 18 decimais)
 
 // Frontend:
 const total = await bciToken.totalSupply();
 const formatted = ethers.utils.formatUnits(total, 18);
 console.log(`Total BCI em circulação: ${formatted}`);
-// Output: Total BCI em circulação: 1000000.0
+// Output inicial: Total BCI em circulação: 10000.0
 ```
 
-**Nota**: Total fixo = 1 milhão (não muda)
+**Nota**: O total supply inicia em 10.000, mas pode variar se o owner usar `mint` ou `burn`.
 
 **Gas**: ~1.000 (leitura, grátis)
 
@@ -403,10 +403,10 @@ function testBCITokenFunctions() public {
     address bob = makeAddr("bob");
 
     // 1. Check initial supply
-    assertEq(token.totalSupply(), 1_000_000e18);
+    assertEq(token.totalSupply(), 10_000e18);
 
     // 2. Owner tem tudo
-    assertEq(token.balanceOf(address(this)), 1_000_000e18);
+    assertEq(token.balanceOf(address(this)), 10_000e18);
 
     // 3. Transfer
     token.transfer(alice, 100e18);

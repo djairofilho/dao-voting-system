@@ -92,7 +92,7 @@ Qualquer endereço pode
 ```
 Se SIM > NÃO → Proposta APROVADA
 Se NÃO ≥ SIM → Proposta REJEITADA
-Se empate (raro) → SIM vence (padrão)
+Se empate (raro) → Proposta REJEITADA (maioria estrita)
 ```
 
 ---

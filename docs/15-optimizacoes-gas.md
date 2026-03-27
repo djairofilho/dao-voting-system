@@ -235,16 +235,15 @@ function createProposal(
 ) public {
     require(token.balanceOf(msg.sender) >= 100e18);
     
-    proposalCount++;
-    proposals[proposalCount] = Proposal({
+    proposalCounter++;
+    proposals[proposalCounter] = Proposal({
         proposer: msg.sender,
         title: title,
         description: description,
-        yesVotes: 0,
-        noVotes: 0,
-        deadline: block.timestamp + (votingDays * 1 days),
-        executed: false,
-        approved: false
+        forVotes: 0,
+        againstVotes: 0,
+        endTime: block.timestamp + (votingDays * 1 days),
+        executed: false
     });
 }
 
@@ -256,17 +255,16 @@ function createProposal(
 ) public {
     require(token.balanceOf(msg.sender) >= 100e18);
     
-    unchecked { proposalCount++; }  // Sem overflow check (sabemos que OK)
+    unchecked { proposalCounter++; }  // Sem overflow check (sabemos que OK)
     
-    Proposal storage prop = proposals[proposalCount];
+    Proposal storage prop = proposals[proposalCounter];
     prop.proposer = msg.sender;
     prop.title = title;
     prop.description = description;
-    prop.yesVotes = 0;
-    prop.noVotes = 0;
-    prop.deadline = block.timestamp + uint256(votingDays) * 1 days;
+    prop.forVotes = 0;
+    prop.againstVotes = 0;
+    prop.endTime = block.timestamp + uint256(votingDays) * 1 days;
     prop.executed = false;
-    prop.approved = false;
 }
 
 // Economiza: 100k - 89k = 11k gas = ~$0.33

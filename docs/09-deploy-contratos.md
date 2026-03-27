@@ -396,7 +396,7 @@ cast call 0x1234567890123456789 "balanceOf(address)" 0xYOUR_ADDRESS \
   --rpc-url $RPC_URL_SEPOLIA
 
 # 2. Checa DAOVoting
-cast call 0x9876543210987654321 "proposalCount()" \
+cast call 0x9876543210987654321 "getTotalProposals()" \
   --rpc-url $RPC_URL_SEPOLIA
 
 # 3. Distribui tokens

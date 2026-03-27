@@ -67,13 +67,13 @@ console.log('✅ Proposta #' + proposalId + ' criada!');
 
 **Gas**: ~100.000
 
-**Emite evento**: `ProposalCreated(proposalId, proposer, title, description, votingDeadline)`
+**Emite evento**: `ProposalCreated(proposalId, proposer, title, endTime)`
 
 **Requer**: Antes deve fazer `bciToken.transfer(myAddress, 100e18)` se não tiver
 
 ---
 
-### 2️⃣ `vote(uint256 proposalId, bool support) → void`
+### 2️⃣ `castVote(uint256 proposalId, bool support) → void`
 
 **O que faz**: Registra seu voto em uma proposta
 
@@ -90,23 +90,23 @@ console.log('✅ Proposta #' + proposalId + ' criada!');
 ✅ Se tem >= 1 BCI: voto contabilizado
 ❌ Se já votou em proposta: revert ("Already voted")
 ❌ Se votação expirou: revert ("Voting period ended")
-❌ Se tem 0 BCI: revert ("No voting power")
+❌ Se tem 0 BCI: revert ("No tokens to vote")
 ```
 
 **Exemplo**:
 ```solidity
 // Bob vota SIM na proposta 1
 vm.prank(bob);
-dao.vote(1, true);
+dao.castVote(1, true);
 // Seu voto = 50 BCI (quantos bob tem)
 
 // Charlie vota NÃO
 vm.prank(charlie);
-dao.vote(1, false);
+dao.castVote(1, false);
 // Seu voto = 250 BCI
 
 // Frontend:
-const tx = await dao.vote(
+const tx = await dao.castVote(
     1,      // proposalId
     true    // support = SIM
 );
@@ -115,13 +115,13 @@ console.log('✅ Seu voto foi registrado!');
 
 // Ver resultado:
 const proposal = await dao.proposals(1);
-console.log('SIM:', ethers.utils.formatUnits(proposal.yesVotes, 18), 'votos');
-console.log('NÃO:', ethers.utils.formatUnits(proposal.noVotes, 18), 'votos');
+console.log('SIM:', ethers.utils.formatUnits(proposal.forVotes, 18), 'votos');
+console.log('NÃO:', ethers.utils.formatUnits(proposal.againstVotes, 18), 'votos');
 ```
 
 **Gas**: ~80.000
 
-**Emite evento**: `VoteCasted(proposalId, voter, support, votePower)`
+**Emite evento**: `VoteCast(proposalId, voter, support, tokens)`
 
 **Nota Importante**: 
 ```
@@ -151,7 +151,7 @@ Se transferir tokens depois, voto não muda!
 
 **O que acontece**:
 ```
-1. Compara yesVotes vs noVotes
+1. Compara forVotes vs againstVotes
 2. Determina resultado (APPROVED ou REJECTED)
 3. Marca como executada
 4. Emite evento ProposalExecuted
@@ -165,10 +165,10 @@ dao.createProposal("Test", "Test", 2);
 
 // Vota
 vm.prank(bob);
-dao.vote(1, true);   // 500 votos SIM
+dao.castVote(1, true);   // 500 votos SIM
 
 vm.prank(charlie);
-dao.vote(1, false);  // 250 votos NÃO
+dao.castVote(1, false);  // 250 votos NÃO
 
 // Aguarda 2 dias + 1 segundo
 vm.warp(block.timestamp + 2 days + 1 seconds);
@@ -177,7 +177,7 @@ vm.warp(block.timestamp + 2 days + 1 seconds);
 dao.executeProposal(1);
 
 // Verificar resultado
-(,, title, desc, yesVotes, noVotes, executed, approved) = dao.proposals(1);
+(,, title, desc, forVotes, againstVotes, executed, approved) = dao.proposals(1);
 assertEq(executed, true);
 assertEq(approved, true);  // SIM > NÃO = aprovada
 
@@ -187,7 +187,9 @@ await tx.wait();
 
 const proposal = await dao.proposals(proposalId);
 console.log(
-    proposal.approved ? '✅ Proposta APROVADA' : '❌ Proposta REJEITADA'
+    proposal.forVotes.gt(proposal.againstVotes)
+        ? '✅ Proposta APROVADA'
+        : '❌ Proposta REJEITADA'
 );
 ```
 
@@ -214,8 +216,8 @@ struct Proposal {
     address proposer;              // quem criou
     string title;                  // título
     string description;            // descrição
-    uint256 yesVotes;              // votos SIM
-    uint256 noVotes;               // votos NÃO
+    uint256 forVotes;              // votos SIM
+    uint256 againstVotes;               // votos NÃO
     uint256 deadline;              // quando vota expira
     bool executed;                 // foi executada?
     bool approved;                 // resultado (só após execute)
@@ -247,7 +249,7 @@ console.log(`${daysRemaining} dias restantes para votação`);
 
 ---
 
-### 5️⃣ `proposalCount() → uint256`
+### 5️⃣ `getTotalProposals() → uint256`
 
 **O que faz**: Retorna quantas propostas foram criadas no total
 
@@ -256,20 +258,19 @@ console.log(`${daysRemaining} dias restantes para votação`);
 **Retorno**:
 | Tipo | Descrição |
 |------|-----------|
-| uint256 | ID da próxima proposta |
+| uint256 | Total de propostas já criadas |
 
 **Exemplo**:
 ```solidity
-uint256 count = dao.proposalCount();
-// Se 5 propostas foram criadas, retorna 6
-// Próxima proposta terá ID 6
+uint256 count = dao.getTotalProposals();
+// Se 5 propostas foram criadas, retorna 5
 
 // Frontend:
-const total = await dao.proposalCount();
-console.log(`Existem ${total - 1} propostas (próxima será #${total})`);
+const total = await dao.getTotalProposals();
+console.log(`Existem ${total} propostas`);
 
 // Listar todas:
-for (let i = 1; i < total; i++) {
+for (let i = 1; i <= total; i++) {
     const prop = await dao.proposals(i);
     console.log(`#${i}: ${prop.title}`);
 }
@@ -320,10 +321,10 @@ if (hasVoted) {
 | Função | O Quê | Requer | Custo |
 |--------|-------|--------|-------|
 | `createProposal` | Nova proposta | 100 BCI | ~100k |
-| `vote` | Registra voto | 1+ BCI | ~80k |
+| `castVote` | Registra voto | 1+ BCI | ~80k |
 | `executeProposal` | Executa resultado | votação expirada | ~50k |
 | `proposals` | Ver detalhes | - | grátis |
-| `proposalCount` | Total created | - | grátis |
+| `getTotalProposals` | Total created | - | grátis |
 | `hasVoted` | Já votou? | - | grátis |
 
 ---
@@ -339,13 +340,13 @@ T0: Alice cria proposta
 ├─ createProposal("...", "...", 3)
 ├─ Estado: CRIADA
 ├─ deadline = T0 + 3 dias
-├─ yesVotes = 0, noVotes = 0
+├─ forVotes = 0, againstVotes = 0
 └─ ✅ Proposta #1 criada
 
 T0 até deadline: Período de votação aberto
-├─ Bob: vote(1, true)    → yesVotes += 500
-├─ Charlie: vote(1, false) → noVotes += 250
-├─ Alice: vote(1, true)    → yesVotes += 100
+├─ Bob: castVote(1, true)    → forVotes += 500
+├─ Charlie: castVote(1, false) → againstVotes += 250
+├─ Alice: castVote(1, true)    → forVotes += 100
 └─ Estado: VOTANDO
 
 T0 + 3 dias: Votação expirada
@@ -354,7 +355,7 @@ T0 + 3 dias: Votação expirada
 
 T0 + 3 dias + 1s: Execute
 ├─ executeProposal(1)
-├─ Compara: yesVotes (600) vs noVotes (250)
+├─ Compara: forVotes (600) vs againstVotes (250)
 ├─ 600 > 250 → APROVADA
 ├─ Estado: EXECUTADA
 └─ approved = true
@@ -367,22 +368,22 @@ dao.createProposal("Aumentar budget", "De 2% para 7%", 3);
 
 // T0+1h
 vm.prank(bob);
-dao.vote(1, true);
+dao.castVote(1, true);
 
 // T0+12h
 vm.prank(charlie);
-dao.vote(1, false);
+dao.castVote(1, false);
 
 // T0+2d
 vm.prank(alice);
-dao.vote(1, true);
+dao.castVote(1, true);
 
 // T0+3d+1s
 vm.warp(block.timestamp + 3 days + 1 seconds);
 dao.executeProposal(1);
 
 // Verificar
-(,, title,, yesVotes, noVotes, executed, approved) = dao.proposals(1);
+(,, title,, forVotes, againstVotes, executed, approved) = dao.proposals(1);
 assertTrue(executed);
 assertTrue(approved);
 ```
@@ -426,16 +427,16 @@ async function checkBeforeVoting(proposalId) {
 
 ```javascript
 async function getAllProposals() {
-    const count = await dao.proposalCount();
+    const count = await dao.getTotalProposals();
     const proposals = [];
     
-    for (let i = 1; i < count; i++) {
+    for (let i = 1; i <= count; i++) {
         const prop = await dao.proposals(i);
         proposals.push({
             id: i,
             title: prop.title,
-            yesVotes: prop.yesVotes,
-            noVotes: prop.noVotes,
+            forVotes: prop.forVotes,
+            againstVotes: prop.againstVotes,
             status: prop.executed ? 'EXECUTADA' : 'VOTANDO'
         });
     }
@@ -450,8 +451,8 @@ async function getAllProposals() {
 // Cron job (Automation)
 // Checkea periodicamente se proposta pode ser executada
 
-for (uint256 i = 1; i < dao.proposalCount(); i++) {
-    (,,,,,, uint256 deadline, bool executed,) = dao.proposals(i);
+for (uint256 i = 1; i <= dao.getTotalProposals(); i++) {
+    (,, uint256 deadline,,, bool executed,) = dao.proposals(i);
     
     if (block.timestamp >= deadline && !executed) {
         dao.executeProposal(i);  // Auto-executa
@@ -484,34 +485,34 @@ assertTrue(!approved);  // false
 ```solidity
 // Alice vota SIM (100 tokens)
 vm.prank(alice);
-dao.vote(1, true);
+dao.castVote(1, true);
 
 // Bob vota NÃO (100 tokens)
 vm.prank(bob);
-dao.vote(1, false);
+dao.castVote(1, false);
 
-// 100 == 100, então: SIM vence (regra padrão)
+// 100 == 100, então: REJEITADA (maioria estrita)
 vm.warp(block.timestamp + 2 days);
 dao.executeProposal(1);
 
 (,,,,,,, bool approved) = dao.proposals(1);
 // approved depende da implementação
-// Geralmente: yesVotes > noVotes (SIM tem que ter MAIS)
+// Geralmente: forVotes > againstVotes (SIM tem que ter MAIS)
 ```
 
 ### Edge Case 3: Transferência de tokens após voto
 ```solidity
 // Bob vota com 500 tokens
 vm.prank(bob);
-dao.vote(1, true);  // voto = 500
+dao.castVote(1, true);  // voto = 500
 
 // Bob transfere todos os tokens
 vm.prank(bob);
 token.transfer(alice, 500e18);
 
 // Seu voto NÃO muda! Permanece 500
-(,,,, uint256 yesVotes,,,) = dao.proposals(1);
-assertEq(yesVotes, 500e18);  // Ainda 500!
+(,,,, uint256 forVotes,,,) = dao.proposals(1);
+assertEq(forVotes, 500e18);  // Ainda 500!
 ```
 
 ---
@@ -530,11 +531,11 @@ function testDAOVotingFunctions() public {
     // 1. Create Proposal
     vm.prank(alice);
     dao.createProposal("Budget", "Aumentar", 1);
-    assertEq(dao.proposalCount(), 2);  // 2a proposta
+    assertEq(dao.getTotalProposals(), 2);  // 2a proposta
 
     // 2. Vote
     vm.prank(bob);
-    dao.vote(1, true);
+    dao.castVote(1, true);
 
     bool voted = dao.hasVoted(1, bob);
     assertTrue(voted);

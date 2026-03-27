@@ -182,7 +182,7 @@ function executeProposal(uint256 propId) public {
 function executeProposal(uint256 propId) public {
     Proposal storage prop = proposals[propId];
     
-    require(block.timestamp >= prop.deadline, "Voting not ended");
+    require(block.timestamp >= prop.deadline, "Voting period not ended");
     require(!prop.executed, "Already executed");
     require(prop.yesVotes > prop.noVotes, "Rejected");
     
@@ -367,7 +367,7 @@ solhint 'contracts/**/*.sol'
 ```
 ✅ Usa OpenZeppelin ERC20 (confiável)
 ✅ Solidity 0.8.19 (overflow protection)
-✅ Supply fixo (1M, não pode mudar)
+✅ Supply inicial de 10.000 BCI
 ✅ Só owner pode emitir? (verificar)
 ❓ Precisa auditoria formal
 
@@ -384,8 +384,8 @@ Recomendações:
 ✅ Deadline validado
 ✅ Solidity 0.8.19
 
-❌ Ataque possível: Votação antes da deadline
-   Solução: Adicionar require(now >= deadline)
+✅ Proteção contra execução precoce presente
+    Usa `require(block.timestamp >= deadline)`
 
 Recomendações:
 - Adicionar mais testes de edge cases
@@ -405,11 +405,11 @@ contract SecurityTests is Test {
     // Test 1: Prevent double voting
     function testCantVoteTwice() public {
         vm.prank(voter);
-        dao.vote(1, true);
+        dao.castVote(1, true);
         
         vm.expectRevert("Already voted");
         vm.prank(voter);
-        dao.vote(1, true);
+        dao.castVote(1, true);
     }
 
     // Test 2: Prevent early execution
@@ -417,7 +417,7 @@ contract SecurityTests is Test {
         vm.prank(alice);
         dao.createProposal("Test", "Test", 5);
         
-        vm.expectRevert("Voting not ended");
+        vm.expectRevert("Voting period not ended");
         dao.executeProposal(1);
     }
 

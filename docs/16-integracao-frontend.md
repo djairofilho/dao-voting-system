@@ -197,7 +197,7 @@ function VoteButton({ proposalId, userAddress }) {
             const contract = await getDAOVotingContract(false);  // read-write
 
             // 2. Chama função (assincrono = aguarda)
-            const txn = await contract.vote(proposalId, support);
+            const txn = await contract.castVote(proposalId, support);
             console.log('Transação enviada:', txn.hash);
             setTx(txn.hash);
 
@@ -289,7 +289,7 @@ function EventDashboard() {
             });
 
             // Ouvir Vote events
-            dao.on("VoteCasted", (propId, voter, support, power, event) => {
+            dao.on("VoteCast", (propId, voter, support, power, event) => {
                 console.log('Vote:', { propId, voter, support });
                 addEvent({
                     type: 'VOTE',
@@ -349,6 +349,7 @@ export default EventDashboard;
 // src/hooks/useProposals.js
 
 import { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 import { getDAOVotingContract } from '../utils/contracts';
 
 function useProposals(refreshInterval = 5000) {  // 5 segundos
@@ -367,18 +368,18 @@ function useProposals(refreshInterval = 5000) {  // 5 segundos
     async function loadProposals() {
         try {
             const dao = await getDAOVotingContract(true);
-            const count = await dao.proposalCount();
+            const count = await dao.getTotalProposals();
             
             const props = [];
-            for (let i = 1; i < count; i++) {
+            for (let i = 1; i <= count; i++) {
                 const prop = await dao.proposals(i);
                 props.push({
                     id: i,
                     title: prop.title,
-                    yesVotes: ethers.utils.formatUnits(prop.yesVotes, 18),
-                    noVotes: ethers.utils.formatUnits(prop.noVotes, 18),
+                    yesVotes: ethers.utils.formatUnits(prop.forVotes, 18),
+                    noVotes: ethers.utils.formatUnits(prop.againstVotes, 18),
                     executed: prop.executed,
-                    approved: prop.approved
+                    approved: prop.forVotes.gt(prop.againstVotes)
                 });
             }
             
@@ -417,7 +418,7 @@ function ProposalList() {
 async function vote(proposalId, support) {
     try {
         const contract = await getDAOVotingContract(false);
-        const tx = await contract.vote(proposalId, support);
+        const tx = await contract.castVote(proposalId, support);
         await tx.wait();
         
     } catch (error) {
@@ -502,13 +503,13 @@ const createReceipt = await createTx.wait();
 console.log('✅ Proposta criada!', createReceipt.transactionHash);
 
 // 4. VOTAR
-const voteTx = await dao.vote(1, true);  // Vote yes na proposta 1
+const voteTx = await dao.castVote(1, true);  // Vote yes na proposta 1
 const voteReceipt = await voteTx.wait();
 console.log('✅ Voto registrado!', voteReceipt.transactionHash);
 
 // 5. VER RESULTADO
 const prop = await dao.proposals(1);
-console.log(`SIM: ${prop.yesVotes}, NÃO: ${prop.noVotes}`);
+console.log(`SIM: ${prop.forVotes}, NÃO: ${prop.againstVotes}`);
 ```
 
 ---

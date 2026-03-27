@@ -163,7 +163,7 @@ Ver: Smart Contract
 - Rápido mas menos seguro
 - Exemplo: Metamask
 
-**Jean Whitelist**
+**Whitelist**
 - Lista de endereços aprovados
 - Pode fazer coisas que outros não
 - Segurança adicional

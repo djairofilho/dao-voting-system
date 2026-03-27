@@ -127,17 +127,17 @@ dao.on("ProposalCreated", (propId, proposer, title, desc, deadline) => {
 });
 ```
 
-### Evento 2: VoteCasted
+### Evento 2: VoteCast
 
 ```solidity
-event VoteCasted(
+event VoteCast(
     uint256 indexed proposalId,
     address indexed voter,
     bool support,
     uint256 votePower
 );
 
-// Emitido quando: dao.vote()
+// Emitido quando: dao.castVote()
 
 Exemplo:
 ├─ proposalId: 1
@@ -146,7 +146,7 @@ Exemplo:
 └─ votePower: 500000000000000000000 (500 tokens)
 
 // Ouvir:
-dao.on("VoteCasted", (propId, voter, support, power) => {
+dao.on("VoteCast", (propId, voter, support, power) => {
     const voto = support ? "SIM" : "NÃO";
     console.log(`🗳️  ${voter} votou ${voto} com ${ethers.utils.formatUnits(power, 18)} poder`);
 });
@@ -234,7 +234,7 @@ function EventDashboard() {
         });
 
         // Listen to votes
-        dao.on("VoteCasted", (propId, voter, support, power) => {
+        dao.on("VoteCast", (propId, voter, support, power) => {
             console.log(`🗳️  Vote on #${propId}: ${voter} voted ${support ? 'YES' : 'NO'}`);
             
             addEvent({
@@ -340,7 +340,7 @@ async function getProposalActivity(proposalId) {
     const dao = new ethers.Contract(ADDRESS_DAO, ABI_DAO, provider);
 
     // Todos os votos para esta proposta
-    const voteFilter = dao.filters.VoteCasted(proposalId);
+    const voteFilter = dao.filters.VoteCast(proposalId);
     const votes = await dao.queryFilter(voteFilter, 'latest' - 50000, 'latest');
 
     console.log(`📊 Proposta #${proposalId} recebeu ${votes.length} votos:`);

@@ -62,24 +62,24 @@ contract BCITokenTest is Test {
         alice = makeAddr("alice");
         bob = makeAddr("bob");
         
-        token = new BCIToken();
+        token = new BCIToken(address(this));
     }
 
     // Teste 1: Verifica supply inicial
     function testInitialSupply() public {
-        assertEq(token.totalSupply(), 1_000_000e18);
+        assertEq(token.totalSupply(), 10_000e18);
     }
 
     // Teste 2: Verifica balance do owner
     function testOwnerBalance() public {
-        assertEq(token.balanceOf(owner), 1_000_000e18);
+        assertEq(token.balanceOf(owner), 10_000e18);
     }
 
     // Teste 3: Transferência básica
     function testTransfer() public {
         token.transfer(alice, 100e18);
         assertEq(token.balanceOf(alice), 100e18);
-        assertEq(token.balanceOf(owner), 1_000_000e18 - 100e18);
+        assertEq(token.balanceOf(owner), 10_000e18 - 100e18);
     }
 
     // Teste 4: Transferência com approve
@@ -162,10 +162,10 @@ contract DAOVotingTest is Test {
         bob = makeAddr("bob");
 
         // Deploy token
-        token = new BCIToken();
+        token = new BCIToken(address(this));
         
         // Deploy DAO com token
-        dao = new DAOVoting(address(token));
+        dao = new DAOVoting(address(token), address(this));
 
         // Distribui tokens
         token.transfer(alice, 100e18);
@@ -182,7 +182,7 @@ contract DAOVotingTest is Test {
             1  // 1 dia votação
         );
 
-        assertEq(dao.proposalCount(), 1);
+        assertEq(dao.getTotalProposals(), 1);
     }
 
     // Teste 2: Falha sem tokens suficientes
@@ -205,7 +205,7 @@ contract DAOVotingTest is Test {
 
         // Bob vota SIM
         vm.prank(bob);
-        dao.vote(1, true);  // proposalId=1, vote=true (SIM)
+        dao.castVote(1, true);  // proposalId=1, vote=true (SIM)
 
         // Verifica voto
         (,,, uint yesVotes, uint noVotes,,) = dao.proposals(1);
@@ -219,11 +219,11 @@ contract DAOVotingTest is Test {
         dao.createProposal("Test", "Test", 1);
 
         vm.prank(bob);
-        dao.vote(1, true);
+        dao.castVote(1, true);
 
         vm.expectRevert();
         vm.prank(bob);
-        dao.vote(1, true);  // Tenta votar de novo!
+        dao.castVote(1, true);  // Tenta votar de novo!
     }
 
     // Teste 5: Executar proposta após votação
@@ -233,7 +233,7 @@ contract DAOVotingTest is Test {
 
         // Vota
         vm.prank(bob);
-        dao.vote(1, true);
+        dao.castVote(1, true);
 
         // Avança tempo 1 dia + 1 segundo
         vm.warp(block.timestamp + 1 days + 1 seconds);
@@ -358,8 +358,8 @@ contract TestStructure is Test {
     // 2. Setup (rodado antes de CADA teste)
     function setUp() public {
         alice = makeAddr("alice");
-        token = new BCIToken();
-        dao = new DAOVoting(address(token));
+        token = new BCIToken(address(this));
+        dao = new DAOVoting(address(token), address(this));
         token.transfer(alice, 100e18);
     }
 
@@ -372,7 +372,7 @@ contract TestStructure is Test {
         dao.createProposal("X", "Y", 1);
         
         // Assert: verifica resultado
-        assertEq(dao.proposalCount(), 1);
+        assertEq(dao.getTotalProposals(), 1);
     }
 
     // 4. Testes devem ser independentes
@@ -409,7 +409,7 @@ import "forge-std/console.sol";
 
 function testVote() public {
     vm.prank(bob);
-    dao.vote(1, true);
+    dao.castVote(1, true);
 
     (,,,, uint yesVotes, uint noVotes,,) = dao.proposals(1);
     
@@ -487,8 +487,8 @@ contract FullVotingTest is Test {
         bob = makeAddr("bob");
         charlie = makeAddr("charlie");
 
-        token = new BCIToken();
-        dao = new DAOVoting(address(token));
+        token = new BCIToken(address(this));
+        dao = new DAOVoting(address(token), address(this));
 
         // Distribui tokens
         token.transfer(alice, 1000e18);
@@ -504,15 +504,15 @@ contract FullVotingTest is Test {
             "Aumentar budget",
             2  // 2 dias votação
         );
-        assertEq(dao.proposalCount(), 1);
+        assertEq(dao.getTotalProposals(), 1);
 
         // 2. Bob vota SIM
         vm.prank(bob);
-        dao.vote(1, true);
+        dao.castVote(1, true);
         
         // 3. Charlie vota NÃO
         vm.prank(charlie);
-        dao.vote(1, false);
+        dao.castVote(1, false);
 
         // 4. Verificar votos ANTES de expirar
         (,,,, uint yes1, uint no1,,) = dao.proposals(1);
@@ -576,7 +576,7 @@ function testTransferDuringVoting() public {
     dao.createProposal("Test", "Test", 2);
     
     vm.prank(bob);
-    dao.vote(1, true);
+    dao.castVote(1, true);
     
     // Bob tira seus tokens (não afeta voto já dado!)
     vm.prank(bob);
